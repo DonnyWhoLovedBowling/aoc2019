@@ -10,9 +10,6 @@ use read_lines::Lines;
 fn count_orbits(planet: &String, depth: i32, orbit_map: &HashMap<String, Vec<String>>) -> i32{
     let mut new_count: i32 = depth;
     if orbit_map.contains_key(planet){
-        if orbit_map[planet].len() > 1{
-            println!("vec length: {}", orbit_map[planet].len());
-        }
         for p in orbit_map[planet].iter(){
             new_count += count_orbits(p, depth+1, orbit_map);
         }
@@ -63,18 +60,14 @@ fn main() -> io::Result<()> {
     let you_path = find_lineage(&String::from("YOU"), &orbit_map, &mut lineage);
     let san_path = find_lineage(&String::from("SAN"), &orbit_map, &mut lineage);
 
-    println!("you path = {:?} ", you_path);
-    println!("santa path = {:?} ", san_path);
-
     let you_set: HashSet<String> = HashSet::from_iter(you_path);
     let san_set: HashSet<String> = HashSet::from_iter(san_path);
 
     let union: HashSet<&String> = you_set.union(&san_set).collect();
     let inters: HashSet<&String> = you_set.intersection(&san_set).collect();
     let shortest_path: HashSet<&&String> = union.difference(&inters).collect();
-    println!("shortest path = {:?} ", shortest_path);
 
-    print!("shortest path length to santa: {} ", shortest_path.len());
+    print!("ans 2 = {} ", shortest_path.len()-2);
     Ok(())
     
 }
