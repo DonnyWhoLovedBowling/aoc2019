@@ -28,3 +28,19 @@ path = "src/ex5.rs"
 [[bin]]
 name = "ex6"
 path = "src/ex6.rs"
+
+[[bin]]
+name = "ex7"
+path = "src/ex7.rs"
+
+[[bin]]
+name = "ex7b"
+path = "src/ex7b.rs"
+
+[[bin]]
+name = "ex8"
+path = "src/ex8.rs"
+
+[dependencies]
+itertools = "0.10.5"
+substring = "1.4.5"
