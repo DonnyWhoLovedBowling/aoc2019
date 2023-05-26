@@ -8,7 +8,7 @@
             "type": "lldb",
             "request": "launch",
             "name": "Debug",
-            "program": "${workspaceFolder}/target/debug/ex6.exe",
+            "program": "${workspaceFolder}/target/debug/e8s.exe",
             "args": [],
             "cwd": "${workspaceFolder}"
         }
