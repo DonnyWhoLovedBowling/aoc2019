@@ -41,6 +41,40 @@ path = "src/ex7b.rs"
 name = "ex8"
 path = "src/ex8.rs"
 
+[[bin]]
+name = "ex9"
+path = "src/ex9.rs"
+
+[[bin]]
+name = "ex10"
+path = "src/ex10.rs"
+
+[[bin]]
+name = "ex11"
+path = "src/ex11.rs"
+
+[[bin]]
+name = "ex12"
+path = "src/ex12.rs"
+
+[[bin]]
+name = "ex13"
+path = "src/ex13.rs"
+
+[[bin]]
+name = "ex14"
+path = "src/ex14.rs"
+
+[[bin]]
+name = "ex15"
+path = "src/ex15.rs"
+
 [dependencies]
+crate = "0.0.2"
+divrem = "1.0.0"
 itertools = "0.10.5"
+num-integer = "0.1.45"
+plotters = "0.3.4"
+priority-queue = "1.3.2"
+rand = "0.8.5"
 substring = "1.4.5"
