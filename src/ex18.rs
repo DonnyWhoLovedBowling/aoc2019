@@ -63,11 +63,87 @@ fn shortest_path(start_point: (i32, i32),  end_point: (i32, i32), points: &HashM
 
 }
 
+fn get_accessible_routes(starts: &Vec<char>, has_keys: &Vec<char>, all_keys: &Vec<char>, route_needs: &HashMap<(char, char), HashSet<char>>, quadrants: &HashMap<char, char>) -> Vec<(char, char)>{
+    let mut ret_vec: Vec<(char, char)> = Vec::new();
+    let mut pt2 = false;
+    if starts.len() > 1{
+        pt2 = true;
+    }
+    for e in all_keys{
+        for start in starts{
+            let r = (*start, *e);
+            let mut needs_ok = true;
+            if has_keys.contains(&e){
+                continue;
+            }
+            if pt2 && (quadrants.get(e) != quadrants.get(start)){
+                continue;
+            }
+            for c in route_needs.get(&r).unwrap(){
+                let cl = c.to_lowercase().collect::<Vec<_>>().get(0).unwrap().clone();
+                if !has_keys.contains(&cl){
+                    needs_ok = false;
+                    // println!("route {:?} needs: {}, which is unvisited: {:?}", r, cl, unvisited);
+                    break;
+                }
+            }
+            if needs_ok{
+                ret_vec.push((*start, *e));
+            }
+        }
+    }
+    ret_vec
+}
 
+fn next_step(start: &Vec<char>, route: &Vec<char>, memmap: &mut HashMap<Vec<char>, (Vec<char>,i32)>,
+    route_needs: &HashMap<(char, char), HashSet<char>>, route_lengths: &HashMap<(char, char), i32>, 
+    all_keys: &Vec<char>, quadrants: &HashMap<char, char>) -> (Vec<char>, i32){
+    let mut key = route.clone();
+    key.sort();
+    if start.len() == 1{
+        key.push(*start.get(0).unwrap());
+    }
+    else{
+        for ix in 0..4{
+            key.push(*start.get(ix).unwrap());
+        }
+    }
+    let l: Option<&(Vec<char>, i32)> = memmap.get(&key);
+    if l != None{
+        let nl = l.unwrap();
+        return nl.clone();
+
+    }
+    if route.len() == all_keys.len(){
+        let nr = route.to_owned();
+        return (nr, 0);
+    }
+    let mut min_dist = 1000000;
+    let mut min_path: Vec<char> = Vec::new();
+    let a_keys: Vec<(char, char)> = get_accessible_routes(start, route, all_keys, route_needs, &quadrants);
+    for r in a_keys{
+        let mut new_starts = start.clone();
+        new_starts.retain(|&x| x != r.0);
+        new_starts.push(r.1);
+
+        let mut new_route: Vec<char> = route.clone();
+        new_route.push(r.1);
+        let new_dist = route_lengths.get(&r).unwrap();
+        let ret = next_step(&new_starts, &new_route, memmap, &route_needs, &route_lengths, &all_keys, &quadrants);
+        if (ret.1+new_dist) < min_dist{
+            min_dist = ret.1+new_dist;
+            min_path = ret.0;
+        }
+    }
+    memmap.insert(key, (min_path.clone(), min_dist));
+    (min_path, min_dist)
+}
 
 fn main() {
     let file = 
-    File::open("C:/users/pcvan/projects/aoc2019/data/ex18_test.txt").expect("can't open the file");
+    File::open("C:/users/pcvan/projects/aoc2019/data/ex18.txt").expect("can't open the file");
+    let pt2 = true;
+
     let mut lines: Lines<File> = Lines::new(file);
     let mut x = 0;
     let mut y = 0;
@@ -75,7 +151,8 @@ fn main() {
     let mut keys: HashMap<(i32, i32), char> = HashMap::new();
     let mut route_lengths: HashMap<(char, char), i32> = HashMap::new();
     let mut route_needs: HashMap<(char, char), HashSet<char>> = HashMap::new();
-
+    let mut quadrants: HashMap<char, char> = HashMap::new();
+    let mut start_point: (i32,i32) = (0,0);
     let mut doors: HashMap<(i32, i32), char> = HashMap::new();
     while let Some(line) = lines.next(){
         for c in line.unwrap().chars(){
@@ -83,7 +160,20 @@ fn main() {
                 all_points.insert((x, y), c);
             }
             if (c.is_alphabetic() && c.is_lowercase()) || c == '@'{
-                keys.insert((x, y), c);
+                if c == '@' && pt2{
+                    let translations = vec![(1,1,'1'),(1,-1,'2'),(-1,1,'3'),(-1,-1,'4')];
+                    for t in translations{
+                        keys.insert((x+t.0, y+t.1), t.2);
+                    }
+                    start_point = (x, y);
+                }
+                else if c == '@'{
+                    keys.insert((x, y), c);
+                }
+                else{
+                    keys.insert((x, y), c);
+                }
+                
             }
             else if c.is_alphabetic(){
                 doors.insert((x, y), c);
@@ -93,98 +183,48 @@ fn main() {
         y += 1;
         x = 0;
     }
-    println!("neighbours of x: {:?}", get_neighbours((79,29), &all_points));
     for s in keys.clone(){
         for e in keys.clone(){
             if s == e{
                 continue;
             } 
             let path = shortest_path(s.0, e.0, &all_points);
-            // let mut add = true;
             let mut needs = HashSet::new();
             let path_len = i32::try_from(path.len()).unwrap();
             for p in path{
-                // if keys.contains_key(&p) && p != e.0 && p != s.0{
-                //     // Deze route moet worden opgebroken;
-                //     add = false;
-                //     break;
-                // }
                 if doors.contains_key(&p){
                     let c: &char = doors.get(&p).unwrap();
                     needs.insert(*c);
                 }
             }
-            // if add{
             route_lengths.insert((s.1, e.1), path_len);
             route_needs.insert((s.1, e.1), needs);
-            // }
+        }
+        if s.0.0 >= start_point.0 && s.0.1 >= start_point.1{
+            quadrants.insert(s.1, '1');
+        }
+        else if s.0.0 >= start_point.0 && s.0.1 <= start_point.1{
+            quadrants.insert(s.1, '2');
+        }
+        else if s.0.0 <= start_point.0 && s.0.1 >= start_point.1{
+            quadrants.insert(s.1, '3');
+        }
+        else if s.0.0 <= start_point.0 && s.0.1 <= start_point.1{
+            quadrants.insert(s.1, '4');
         }
 
     }
-    println!("route needs: {:?}", route_needs);
 
-    let mut keys_str: Vec<char> = keys.values().copied().collect();
-    keys_str.retain(|&x| x != '@');
-    
-    // let mut pq: PriorityQueue <(Vec<char>, char, Vec<char>), std::cmp::Reverse<i32>> = PriorityQueue::new();
-    let mut pq: Vec<(Vec<char>, char, Vec<char>, i32)> = Vec::new();
-    // pq.push((keys_str.clone(), '@', Vec::new()), Reverse(0));
-    pq.push((keys_str.clone(), '@', Vec::new(), 0));
-
-    let mut min_length = 1000000;
-    let mut shortest_path: Vec<char> = Vec::new();
-    loop{
-        let state: Option<(Vec<char>, char, Vec<char>, i32)> = pq.pop();
-        if state == None{
-            break;
-        }
-        // let state_unwrapped: ((Vec<char>, char, Vec<char>), Reverse<i32>) = state.unwrap();
-        let state_unwrapped: (Vec<char>, char, Vec<char>, i32) = state.unwrap();
-        
-        let unvisited: Vec<char> = state_unwrapped.0.clone();
-        let s = state_unwrapped.1;
-        for e in unvisited.clone(){
-            if e == s{
-                println!("start = end! {}", e);
-                continue;
-            }
-            let mut visited = state_unwrapped.2.clone();
-            visited.push(e);
-            let mut new_unvisited = unvisited.clone();
-            new_unvisited.retain(|&x| x != e);
-            let r = (s,e);
-            let mut needs_ok = true;
-            if !route_needs.contains_key(&r){
-                continue;
-            }
-            for c in route_needs.get(&r).unwrap(){
-                let cl = c.to_lowercase().collect::<Vec<_>>().get(0).unwrap().clone();
-                if unvisited.contains(&cl){
-                    needs_ok = false;
-                    // println!("route {:?} needs: {}, which is unvisited: {:?}", r, cl, unvisited);
-                    break;
-                }
-            }
-            if needs_ok{
-                // let Reverse(current_prio_origin) = state_unwrapped.1.clone();
-                let current_prio_origin = state_unwrapped.3;
-                let new_dist = current_prio_origin + *route_lengths.get(&r).unwrap();  
-                if new_unvisited.len() > 0{
-                    pq.push((new_unvisited,e, visited, new_dist));
-                }
-                else{
-                    // println!("found full path! {}: {:?}", new_dist, visited);
-                    if new_dist < min_length{
-                    println!("found shorter path! {}: {:?}", new_dist, visited);
-
-                        shortest_path = visited;
-                        min_length = new_dist;
-                    }
-                }
-            }    
-        }
+    let mut keys_vec: Vec<char> = keys.values().copied().collect();
+    let starts: Vec<char>;
+    if pt2{
+        starts = vec!['1', '2','3', '4'];
     }
-    println!("min_length: {}: {:?}", min_length, shortest_path);
-
+    else{
+        starts = vec!['@']
+    }
+    keys_vec.retain(|&x| !starts.contains(&x));
+    let mut memmap = HashMap::new();
+    println!("{:?}", next_step(&starts, &Vec::new(), &mut memmap, &route_needs, &route_lengths, &keys_vec, &quadrants));
 }
 
