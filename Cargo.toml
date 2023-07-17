@@ -85,6 +85,10 @@ path = "src/ex18.rs"
 name = "ex19"
 path = "src/ex19.rs"
 
+[[bin]]
+name = "ex20"
+path = "src/ex20.rs"
+
 [dependencies]
 chrono = "0.4.26"
 crate = "0.0.2"
