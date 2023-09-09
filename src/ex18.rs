@@ -225,6 +225,6 @@ fn main() {
     }
     keys_vec.retain(|&x| !starts.contains(&x));
     let mut memmap = HashMap::new();
-    println!("{:?}", next_step(&starts, &Vec::new(), &mut memmap, &route_needs, &route_lengths, &keys_vec, &quadrants));
+    println!("shortest path: {:?}", next_step(&starts, &Vec::new(), &mut memmap, &route_needs, &route_lengths, &keys_vec, &quadrants));
 }
 
